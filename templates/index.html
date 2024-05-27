@@ -20,11 +20,19 @@
             text-align: center;
             margin-top: 20px;
         }
+        .logout-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center">Scraping de Dados</h1>
+        <div class="logout-container">
+            <h1>Scraping de Dados</h1>
+            <button id="logout-button" class="btn btn-danger" onclick="logout()" style="display: none;">Logout</button>
+        </div>
         
         <div id="login-form" class="card">
             <div class="card-body">
@@ -102,7 +110,19 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             populateYearSelect();
+            checkLogin();
         });
+
+        function checkLogin() {
+            // Verifica se há um token armazenado no localStorage
+            token = localStorage.getItem('token');
+            if (token) {
+                // Se houver um token, exibe os botões de dados e o botão de logout
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('data-buttons').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'inline-block';
+            }
+        }
 
         function populateYearSelect() {
             const currentYear = new Date().getFullYear();
@@ -148,11 +168,22 @@
 
             if (response.ok) {
                 token = data.access_token;
+                // Armazena o token no localStorage
+                localStorage.setItem('token', token);
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('data-buttons').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'inline-block';
             } else {
                 alert('Login failed');
             }
+        }
+
+        function logout() {
+            // Remove o token do localStorage
+            localStorage.removeItem('token');
+            token = '';
+            clearData();
+            location.reload(); // Recarrega a página
         }
 
         async function fetchData() {
