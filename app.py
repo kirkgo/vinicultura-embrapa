@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import os
+from datetime import datetime
 
 app = FastAPI()
 
@@ -78,8 +79,8 @@ def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/data")
-def get_data(endpoint: str, filename: str, current_user: dict = Depends(get_current_active_user)):
-    url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?{endpoint}"
+def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={ano}&{endpoint}"
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -97,11 +98,11 @@ def get_data(endpoint: str, filename: str, current_user: dict = Depends(get_curr
         return {"Error": str(e)}
 
 @app.get("/production")
-def production_scraping(current_user: dict = Depends(get_current_active_user)):
-    return get_data("opcao=opt_02", "producao")
+def production_scraping(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    return get_data(f"opcao=opt_02", "producao", ano=ano)
 
 @app.get("/processing")
-def processing_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
+def processing_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "viniferas": "subopt_01",
         "americanas-e-hibridas": "subopt_02",
@@ -113,14 +114,14 @@ def processing_scraping(subopcao: str, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: viniferas, americanas-e-hibridas, uvas-de-mesa, sem-classificacao.")
 
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento_{subopcao}")
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento_{subopcao}", ano=ano)
 
 @app.get("/commerce")
-def commerce_scraping(current_user: dict = Depends(get_current_active_user)):
-    return get_data("opcao=opt_04", "comercializacao")
+def commerce_scraping(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    return get_data("opcao=opt_04", "comercializacao", ano=ano)
 
 @app.get("/importacao")
-def importacao_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
+def importacao_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -133,10 +134,10 @@ def importacao_scraping(subopcao: str, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, uvas-passas, sudo-de-uva.")
     
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao_{subopcao}")
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao_{subopcao}", ano=ano)
 
 @app.get("/exportacao")
-def exportacao_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
+def exportacao_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -148,7 +149,7 @@ def exportacao_scraping(subopcao: str, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, sudo-de-uva.")
     
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao_{subopcao}")
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao_{subopcao}", ano=ano)
 
 @app.get("/download/{filename}")
 def download_file(filename: str):
