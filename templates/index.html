@@ -68,6 +68,7 @@
                     </select>
                 </div>
                 <button class="btn btn-primary" onclick="fetchData()">Buscar Dados</button>
+                <button class="btn btn-secondary" onclick="clearData()">Limpar Dados</button>
                 <div id="loading-spinner" class="spinner-border text-primary" role="status">
                     <span class="sr-only">Carregando...</span>
                 </div>
@@ -173,6 +174,12 @@
             fileNameP.textContent = `Nome do arquivo: ${filename}`;
             fileLink.href = `http://127.0.0.1:8000/download/${filename}`;
             fileInfoDiv.style.display = 'block';
+        }
+
+        function clearData() {
+            document.getElementById('data-select').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('file-info').style.display = 'none';
         }
     </script>
 
