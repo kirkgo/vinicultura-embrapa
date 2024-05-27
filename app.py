@@ -63,22 +63,6 @@ async def get_current_active_user(current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-@app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user_dict = fake_users_db.get(form_data.username)
-    if not user_dict:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    user = get_user(fake_users_db, form_data.username)
-    hashed_password = fake_hash_password(form_data.password)
-    if not hashed_password == user["hashed_password"]:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    return {"access_token": user["username"], "token_type": "bearer"}
-
-@app.get("/", response_class=HTMLResponse)
-def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.get("/data")
 def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={ano}&{endpoint}"
     try:
@@ -96,6 +80,21 @@ def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, curre
             return {"Error": f"Falha ao carregar os dados, status code: {response.status_code}"}
     except requests.exceptions.RequestException as e:
         return {"Error": str(e)}
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user_dict = fake_users_db.get(form_data.username)
+    if not user_dict:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    user = get_user(fake_users_db, form_data.username)
+    hashed_password = fake_hash_password(form_data.password)
+    if not hashed_password == user["hashed_password"]:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    return {"access_token": user["username"], "token_type": "bearer"}
+
+@app.get("/", response_class=HTMLResponse)
+def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/producao")
 def get_producao(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
