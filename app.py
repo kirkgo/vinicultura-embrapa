@@ -97,12 +97,12 @@ def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, curre
     except requests.exceptions.RequestException as e:
         return {"Error": str(e)}
 
-@app.get("/production")
-def production_scraping(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+@app.get("/producao")
+def get_producao(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     return get_data(f"opcao=opt_02", "producao", ano=ano)
 
-@app.get("/processing")
-def processing_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+@app.get("/processamento")
+def get_processamento(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "viniferas": "subopt_01",
         "americanas-e-hibridas": "subopt_02",
@@ -114,14 +114,14 @@ def processing_scraping(subopcao: str, ano: int = datetime.now().year, current_u
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: viniferas, americanas-e-hibridas, uvas-de-mesa, sem-classificacao.")
 
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento_{subopcao}", ano=ano)
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento-{subopcao}", ano=ano)
 
-@app.get("/commerce")
-def commerce_scraping(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+@app.get("/comercializacao")
+def get_comercializacao(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     return get_data("opcao=opt_04", "comercializacao", ano=ano)
 
 @app.get("/importacao")
-def importacao_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+def get_importacao(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -134,10 +134,10 @@ def importacao_scraping(subopcao: str, ano: int = datetime.now().year, current_u
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, uvas-passas, sudo-de-uva.")
     
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao_{subopcao}", ano=ano)
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao-{subopcao}", ano=ano)
 
 @app.get("/exportacao")
-def exportacao_scraping(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+def get_exportacao(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -149,7 +149,7 @@ def exportacao_scraping(subopcao: str, ano: int = datetime.now().year, current_u
         raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, sudo-de-uva.")
     
     subopcao_value = valid_subopcoes[subopcao]
-    return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao_{subopcao}", ano=ano)
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao-{subopcao}", ano=ano)
 
 @app.get("/download/{filename}")
 def download_file(filename: str):
@@ -187,6 +187,6 @@ def save_to_csv(data, total, filename):
         total_df = pd.DataFrame([total])
         df = pd.concat([df, total_df], ignore_index=True)
 
-    file_path = f"data/{filename}_data.csv"
+    file_path = f"data/vitivinicultura-{filename}.csv"
     df.to_csv(file_path, index=False)
-    return f"{filename}_data.csv"
+    return f"vitivinicultura-{filename}.csv"
