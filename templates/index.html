@@ -8,11 +8,22 @@
 <body>
     <h1>Scraping de Dados</h1>
     <button onclick="fetchData('production')">Produção</button>
-    <button onclick="fetchData('processing', 'viniferas')">Processamento Viníferas</button>
-    <button onclick="fetchData('processing', 'americanas-e-hibridas')">Processamento Americanas e Híbridas</button>
-    <button onclick="fetchData('processing', 'uvas-de-mesa')">Processamento Uvas de Mesa</button>
-    <button onclick="fetchData('processing', 'sem-classificacao')">Processamento Sem Classificação</button>
+    <button onclick="fetchData('processing', 'viniferas')">Processamento - Viníferas</button>
+    <button onclick="fetchData('processing', 'americanas-e-hibridas')">Processamento - Americanas e Híbridas</button>
+    <button onclick="fetchData('processing', 'uvas-de-mesa')">Processamento - Uvas de Mesa</button>
+    <button onclick="fetchData('processing', 'sem-classificacao')">Processamento - Sem Classificação</button>
     <button onclick="fetchData('commerce')">Comercialização</button>
+
+    <button onclick="fetchData('importacao', 'vinhos-de-mesa')">Importação - Vinhos de Mesa</button>
+    <button onclick="fetchData('importacao', 'espumantes')">Importação - Espumantes</button>
+    <button onclick="fetchData('importacao', 'uvas-frescas')">Importação - Uvas Frescas</button>
+    <button onclick="fetchData('importacao', 'uvas-passas')">Importação - Uvas Passas</button>
+    <button onclick="fetchData('importacao', 'suco-de-uva')">Importação - Suco de Uva</button>
+
+    <button onclick="fetchData('exportacao', 'vinhos-de-mesa')">Exportação - Vinhos de Mesa</button>
+    <button onclick="fetchData('exportacao', 'espumantes')">Exportação - Espumantes</button>
+    <button onclick="fetchData('exportacao', 'uvas-frescas')">Exportação - Uvas Frescas</button>
+    <button onclick="fetchData('exportacao', 'suco-de-uva')">Exportação - Suco de Uva</button>
 
     <div id="result"></div>
 

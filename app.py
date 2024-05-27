@@ -72,65 +72,63 @@ def processing_scraping(subopcao: str):
 def commerce_scraping():
     return get_data("opcao=opt_04", "comercializacao")
 
+@app.get("/importacao")
+def importacao_scraping(subopcao: str):
+    valid_subopcoes = {
+        "vinhos-de-mesa": "subopt_01",
+        "espumantes": "subopt_02",
+        "uvas-frescas": "subopt_03",
+        "uvas-passas": "subopt_04",
+        "suco-de-uva": "subopt_05"
+    }
+
+    if subopcao not in valid_subopcoes:
+        raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, uvas-passas, sudo-de-uva.")
+    
+    subopcao_value = valid_subopcoes[subopcao]
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao_{subopcao}")
+
+@app.get("/exportacao")
+def exportacao_scraping(subopcao: str):
+    valid_subopcoes = {
+        "vinhos-de-mesa": "subopt_01",
+        "espumantes": "subopt_02",
+        "uvas-frescas": "subopt_03",
+        "suco-de-uva": "subopt_04"
+    }
+
+    if subopcao not in valid_subopcoes:
+        raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: vinhos-de-mesa, espumantes, uvas-frescas, sudo-de-uva.")
+    
+    subopcao_value = valid_subopcoes[subopcao]
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao_{subopcao}")
+
 def parse_table(table):
     data = []
-    current_item = None
     total = None
-    for row in table.find_all("tr"):
+
+    headers = [th.get_text(strip=True) for th in table.find("thead").find_all("th")]
+
+    for row in table.find("tbody").find_all("tr"):
         cells = row.find_all("td")
-        if len(cells) == 2:
-            cell_class = cells[0].get("class", [""])[0]
-            name = cells[0].get_text(strip=True)
-            quantity = cells[1].get_text(strip=True)
+        if len(cells) == len(headers):
+            item = {headers[i]: cells[i].get_text(strip=True) for i in range(len(headers))}
+            data.append(item)
 
-            if "tb_item" in cell_class:
-                if current_item:
-                    data.append(current_item)
-                current_item = {"Nome": name, "Quantidade": quantity, "Subitens": []}
-            elif "tb_subitem" in cell_class and current_item:
-                current_item["Subitens"].append({"Nome": name, "Quantidade": quantity})
-            elif "tb_total" in cell_class:
-                total = quantity
-
-    if current_item:
-        data.append(current_item)
-
-    if total is None:
-        tfoot = table.find("tfoot", class_="tb_total")
-        if tfoot:
-            total_cells = tfoot.find_all("td")
-            if len(total_cells) == 2:
-                total = total_cells[1].get_text(strip=True)
+    tfoot = table.find("tfoot", class_="tb_total")
+    if tfoot:
+        total_cells = tfoot.find_all("td")
+        if len(total_cells) == len(headers):
+            total = {headers[i]: total_cells[i].get_text(strip=True) for i in range(len(headers))}
 
     return data, total
 
 def save_to_csv(data, total, filename):
     os.makedirs("data", exist_ok=True)
 
-    rows = []
-    for item in data:
-        item_row = {
-            "Nome": item["Nome"],
-            "Quantidade": item["Quantidade"],
-            "Subnome": "",
-            "Subquantidade": ""
-        }
-        rows.append(item_row)
-        for subitem in item["Subitens"]:
-            subitem_row = {
-                "Nome": "",
-                "Quantidade": "",
-                "Subnome": subitem["Nome"],
-                "Subquantidade": subitem["Quantidade"]
-            }
-            rows.append(subitem_row)
-    total_row = {
-        "Nome": "Total",
-        "Quantidade": total,
-        "Subnome": "",
-        "Subquantidade": ""
-    }
-    rows.append(total_row)
+    df = pd.DataFrame(data)
+    if total:
+        total_df = pd.DataFrame([total])
+        df = pd.concat([df, total_df], ignore_index=True)
 
-    df = pd.DataFrame(rows)
     df.to_csv(f"data/{filename}_data.csv", index=False)

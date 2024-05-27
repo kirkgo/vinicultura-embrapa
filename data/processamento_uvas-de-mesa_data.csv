@@ -1,12 +1,12 @@
-Nome,Quantidade,Subnome,Subquantidade
-TINTAS,*,,
-,,Alphonse Lavallee,*
-,,Moscato de Hamburgo,*
-BRANCAS,*,,
-,,Cardinal,*
-,,Golden Queen,*
-,,Patrícia,*
-,,Perlona,*
-,,Italia,*
-,,"Rubi (Itália, Itália Ro)",*
-Total,0,,
+Cultivar,Quantidade (Kg)
+TINTAS,*
+Alphonse Lavallee,*
+Moscato de Hamburgo,*
+BRANCAS,*
+Cardinal,*
+Golden Queen,*
+Patrícia,*
+Perlona,*
+Italia,*
+"Rubi (Itália, Itália Ro)",*
+Total,0
