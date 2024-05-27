@@ -81,7 +81,7 @@ def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, curre
             table = soup.find("table", {'class':'tb_base tb_dados'})
             if table:
                 data, total = parse_table(table)
-                file_path = save_to_csv(data, total, filename)
+                file_path = save_to_csv(data, total, f"{filename}-{ano}")
                 return {"Data": data, "Total": total, "filename": file_path}
             else:
                 return {"Error": "Tabela não encontrada na página"}
