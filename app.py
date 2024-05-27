@@ -53,17 +53,26 @@ def fake_decode_token(token):
     return user
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    Retorna o usuário atual com base no token de autenticação.
+    """
     user = fake_decode_token(token)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     return user
 
 async def get_current_active_user(current_user: dict = Depends(get_current_user)):
+    """
+    Verifica se o usuário atual está ativo.
+    """
     if current_user.get("disabled"):
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém dados do endpoint fornecido e salva em um arquivo CSV.
+    """
     url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={ano}&{endpoint}"
     try:
         response = requests.get(url)
@@ -83,6 +92,9 @@ def get_data(endpoint: str, filename: str, ano: int = datetime.now().year, curre
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Gera um token de acesso para o usuário autenticado.
+    """
     user_dict = fake_users_db.get(form_data.username)
     if not user_dict:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -94,14 +106,23 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
+    """
+    Renderiza a página inicial.
+    """
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/producao")
 def get_producao(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém os dados de produção para o ano especificado.
+    """
     return get_data(f"opcao=opt_02", "producao", ano=ano)
 
 @app.get("/processamento")
 def get_processamento(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém os dados de processamento para o ano especificado de acordo com a opção selecionada.
+    """
     valid_subopcoes = {
         "viniferas": "subopt_01",
         "americanas-e-hibridas": "subopt_02",
@@ -117,10 +138,16 @@ def get_processamento(subopcao: str, ano: int = datetime.now().year, current_use
 
 @app.get("/comercializacao")
 def get_comercializacao(ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém os dados de comercialização para o ano especificado.
+    """
     return get_data("opcao=opt_04", "comercializacao", ano=ano)
 
 @app.get("/importacao")
 def get_importacao(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém os dados de importação para o ano especificado de acordo com a opção selecionada.
+    """
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -137,6 +164,9 @@ def get_importacao(subopcao: str, ano: int = datetime.now().year, current_user: 
 
 @app.get("/exportacao")
 def get_exportacao(subopcao: str, ano: int = datetime.now().year, current_user: dict = Depends(get_current_active_user)):
+    """
+    Obtém os dados de exportação para o ano especificado de acordo com a opção selecionada.
+    """
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -152,6 +182,9 @@ def get_exportacao(subopcao: str, ano: int = datetime.now().year, current_user: 
 
 @app.get("/download/{filename}")
 def download_file(filename: str):
+    """
+    Faz o download do arquivo especificado.
+    """
     file_path = f"data/{filename}"
     if os.path.exists(file_path):
         return FileResponse(file_path, media_type='application/octet-stream', filename=filename)
@@ -159,6 +192,9 @@ def download_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
 def parse_table(table):
+    """
+    Faz o parsing da tabela HTML e retorna os dados e o total.
+    """
     data = []
     total = None
 
@@ -179,6 +215,9 @@ def parse_table(table):
     return data, total
 
 def save_to_csv(data, total, filename):
+    """
+    Salva os dados em um arquivo CSV.
+    """
     os.makedirs("data", exist_ok=True)
 
     df = pd.DataFrame(data)
