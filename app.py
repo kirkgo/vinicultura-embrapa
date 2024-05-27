@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
@@ -26,12 +27,58 @@ app.add_middleware(
 
 templates = Jinja2Templates(directory="templates")
 
+# Configuração do OAuth2
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+fake_users_db = {
+    "admin": {
+        "username": "admin",
+        "full_name": "Super Admin",
+        "hashed_password": "fakehashedmlet1",
+        "disabled": False,
+    }
+}
+
+def fake_hash_password(password: str):
+    return "fakehashed" + password
+
+def get_user(db, username: str):
+    if username in db:
+        user_dict = db[username]
+        return user_dict
+
+def fake_decode_token(token):
+    user = get_user(fake_users_db, token)
+    return user
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = fake_decode_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    return user
+
+async def get_current_active_user(current_user: dict = Depends(get_current_user)):
+    if current_user.get("disabled"):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user_dict = fake_users_db.get(form_data.username)
+    if not user_dict:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    user = get_user(fake_users_db, form_data.username)
+    hashed_password = fake_hash_password(form_data.password)
+    if not hashed_password == user["hashed_password"]:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    return {"access_token": user["username"], "token_type": "bearer"}
+
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/data")
-def get_data(endpoint: str, filename: str):
+def get_data(endpoint: str, filename: str, current_user: dict = Depends(get_current_active_user)):
     url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?{endpoint}"
     try:
         response = requests.get(url)
@@ -40,8 +87,8 @@ def get_data(endpoint: str, filename: str):
             table = soup.find("table", {'class':'tb_base tb_dados'})
             if table:
                 data, total = parse_table(table)
-                save_to_csv(data, total, filename)
-                return {"Data": data, "Total": total}
+                file_path = save_to_csv(data, total, filename)
+                return {"Data": data, "Total": total, "filename": file_path}
             else:
                 return {"Error": "Tabela não encontrada na página"}
         else:
@@ -50,11 +97,11 @@ def get_data(endpoint: str, filename: str):
         return {"Error": str(e)}
 
 @app.get("/production")
-def production_scraping():
+def production_scraping(current_user: dict = Depends(get_current_active_user)):
     return get_data("opcao=opt_02", "producao")
 
 @app.get("/processing")
-def processing_scraping(subopcao: str):
+def processing_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "viniferas": "subopt_01",
         "americanas-e-hibridas": "subopt_02",
@@ -69,11 +116,11 @@ def processing_scraping(subopcao: str):
     return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento_{subopcao}")
 
 @app.get("/commerce")
-def commerce_scraping():
+def commerce_scraping(current_user: dict = Depends(get_current_active_user)):
     return get_data("opcao=opt_04", "comercializacao")
 
 @app.get("/importacao")
-def importacao_scraping(subopcao: str):
+def importacao_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -89,7 +136,7 @@ def importacao_scraping(subopcao: str):
     return get_data(f"subopcao={subopcao_value}&opcao=opt_05", f"importacao_{subopcao}")
 
 @app.get("/exportacao")
-def exportacao_scraping(subopcao: str):
+def exportacao_scraping(subopcao: str, current_user: dict = Depends(get_current_active_user)):
     valid_subopcoes = {
         "vinhos-de-mesa": "subopt_01",
         "espumantes": "subopt_02",
@@ -102,6 +149,14 @@ def exportacao_scraping(subopcao: str):
     
     subopcao_value = valid_subopcoes[subopcao]
     return get_data(f"subopcao={subopcao_value}&opcao=opt_06", f"exportacao_{subopcao}")
+
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    file_path = f"data/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='application/octet-stream', filename=filename)
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
 
 def parse_table(table):
     data = []
@@ -131,4 +186,6 @@ def save_to_csv(data, total, filename):
         total_df = pd.DataFrame([total])
         df = pd.concat([df, total_df], ignore_index=True)
 
-    df.to_csv(f"data/{filename}_data.csv", index=False)
+    file_path = f"data/{filename}_data.csv"
+    df.to_csv(file_path, index=False)
+    return f"{filename}_data.csv"
