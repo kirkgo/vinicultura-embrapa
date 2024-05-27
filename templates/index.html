@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping de Dados</title>
+</head>
+<body>
+    <h1>Scraping de Dados</h1>
+    <button onclick="fetchData('production')">Produção</button>
+    <button onclick="fetchData('processing', 'viniferas')">Processamento Viníferas</button>
+    <button onclick="fetchData('processing', 'americanas-e-hibridas')">Processamento Americanas e Híbridas</button>
+    <button onclick="fetchData('processing', 'uvas-de-mesa')">Processamento Uvas de Mesa</button>
+    <button onclick="fetchData('processing', 'sem-classificacao')">Processamento Sem Classificação</button>
+    <button onclick="fetchData('commerce')">Comercialização</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function fetchData(endpoint, subopcao = '') {
+            let url = `http://127.0.0.1:8000/${endpoint}`;
+            if (subopcao) {
+                url += `?subopcao=${subopcao}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayResult(data);
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                displayResult({ Error: 'Erro ao buscar dados' });
+            }
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+    </script>
+</body>
+</html>

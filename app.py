@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
@@ -6,12 +9,29 @@ import os
 
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return "Home"
+# Configuração do CORS
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    # Adicione outras origens conforme necessário
+]
 
-@app.get("/scrape")
-def scrape_data(endpoint: str, filename: str):
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+templates = Jinja2Templates(directory="templates")
+
+@app.get("/", response_class=HTMLResponse)
+def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/data")
+def get_data(endpoint: str, filename: str):
     url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?{endpoint}"
     try:
         response = requests.get(url)
@@ -31,27 +51,26 @@ def scrape_data(endpoint: str, filename: str):
 
 @app.get("/production")
 def production_scraping():
-    return scrape_data("opcao=opt_02", "producao")
+    return get_data("opcao=opt_02", "producao")
 
-@app.get("/processing/viniferas")
-def processing_viniferas_scraping():
-    return scrape_data("subopcao=subopt_01&opcao=opt_03", "processamento_viniferas")
+@app.get("/processing")
+def processing_scraping(subopcao: str):
+    valid_subopcoes = {
+        "viniferas": "subopt_01",
+        "americanas-e-hibridas": "subopt_02",
+        "uvas-de-mesa": "subopt_03",
+        "sem-classificacao": "subopt_04"
+    }
 
-@app.get("/processing/americanas-e-hibridas")
-def processing_americanas_e_hibridas_scraping():
-    return scrape_data("subopcao=subopt_02&opcao=opt_03", "processamento_americanas_e_hibridas")
+    if subopcao not in valid_subopcoes:
+        raise HTTPException(status_code=400, detail="Subopção inválida. Escolha entre: viniferas, americanas-e-hibridas, uvas-de-mesa, sem-classificacao.")
 
-@app.get("/processing/uvas-de-mesa")
-def processing_uvas_de_mesa_scraping():
-    return scrape_data("subopcao=subopt_03&opcao=opt_03", "processamento_uvas_de_mesa")
-
-@app.get("/processing/sem-classificacao")
-def processing_sem_classificacao_scraping():
-    return scrape_data("subopcao=subopt_04&opcao=opt_03", "processamento_sem_classificacao")
+    subopcao_value = valid_subopcoes[subopcao]
+    return get_data(f"subopcao={subopcao_value}&opcao=opt_03", f"processamento_{subopcao}")
 
 @app.get("/commerce")
 def commerce_scraping():
-    return scrape_data("opcao=opt_04", "comercializacao")
+    return get_data("opcao=opt_04", "comercializacao")
 
 def parse_table(table):
     data = []
@@ -82,7 +101,7 @@ def parse_table(table):
             total_cells = tfoot.find_all("td")
             if len(total_cells) == 2:
                 total = total_cells[1].get_text(strip=True)
-    
+
     return data, total
 
 def save_to_csv(data, total, filename):
