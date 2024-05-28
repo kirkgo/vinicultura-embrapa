@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitivinicultura</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 50px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+        }
+        #login-form, #data-buttons, #file-info, #result {
+            margin-top: 20px;
+        }
+        #loading-spinner {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .logout-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        footer {
+            margin-top: auto;
+            padding: 20px 0;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logout-container">
+            <h1>Vitivinicultura</h1>
+            <button id="logout-button" class="btn btn-danger" onclick="logout()" style="display: none;">Logout</button>
+        </div>
+        <p>Os dados apresentados são do site oficial da <a href="http://vitibrasil.cnpuv.embrapa.br/" target="_blank">Embrapa Uva e Vinho</a>.</p>
+        
+        <div id="login-form" class="card">
+            <div class="card-body">
+                <h2 class="card-title">Login</h2>
+                <form id="login" onsubmit="event.preventDefault(); login();">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="data-buttons" class="card" style="display: none;">
+            <div class="card-body">
+                <h2 class="card-title">Dados Disponíveis</h2>
+                <div class="form-group">
+                    <label for="data-select">Consultar:</label>
+                    <select id="data-select" class="form-control" onchange="handleOptionChange()">
+                        <option value="" selected disabled>Selecione uma opção</option>
+                        <option value="comercializacao">Comercialização</option>
+                        <option value="exportacao|espumantes">Exportação - Espumantes</option>
+                        <option value="exportacao|suco-de-uva">Exportação - Suco de Uva</option>
+                        <option value="exportacao|uvas-frescas">Exportação - Uvas Frescas</option>
+                        <option value="exportacao|vinhos-de-mesa">Exportação - Vinhos de Mesa</option>
+                        <option value="importacao|espumantes">Importação - Espumantes</option>
+                        <option value="importacao|suco-de-uva">Importação - Suco de Uva</option>
+                        <option value="importacao|uvas-frescas">Importação - Uvas Frescas</option>
+                        <option value="importacao|uvas-passas">Importação - Uvas Passas</option>
+                        <option value="importacao|vinhos-de-mesa">Importação - Vinhos de Mesa</option>
+                        <option value="processamento|americanas-e-hibridas">Processamento - Americanas e Híbridas</option>
+                        <option value="processamento|sem-classificacao">Processamento - Sem Classificação</option>
+                        <option value="processamento|uvas-de-mesa">Processamento - Uvas de Mesa</option>
+                        <option value="processamento|viniferas">Processamento - Viníferas</option>
+                        <option value="producao">Produção</option>
+                    </select>
+                </div>
+                <div class="form-group" id="year-select-container" style="display: none;">
+                    <label for="year-select">Ano:</label>
+                    <select id="year-select" class="form-control">
+                        <!-- Opções de ano serão preenchidas pelo JavaScript -->
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="fetchData()">Buscar Dados</button>
+                <button class="btn btn-secondary" onclick="clearData()">Limpar Dados</button>
+                <div id="loading-spinner" class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Carregando...</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="file-info" class="card" style="display: none;">
+            <div class="card-body">
+                <h2 class="card-title">Arquivo Gerado</h2>
+                <p id="file-name"></p>
+                <a id="file-link" href="#" class="btn btn-secondary" download>Baixar CSV</a>
+            </div>
+        </div>
+
+        <div id="result" class="card" style="display: none;">
+            <div class="card-body">
+                <h2 class="card-title">Resultado</h2>
+                <pre id="result-content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>MLET1 - Grupo 66</p>
+    </footer>
+
+    <script>
+        let token = '';
+
+        document.addEventListener("DOMContentLoaded", function() {
+            populateYearSelect();
+            checkLogin();
+        });
+
+        function checkLogin() {
+            // Verifica se há um token armazenado no localStorage
+            token = localStorage.getItem('token');
+            if (token) {
+                // Se houver um token, exibe os botões de dados e o botão de logout
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('data-buttons').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'inline-block';
+            }
+        }
+
+        function populateYearSelect() {
+            const currentYear = new Date().getFullYear();
+            const yearSelect = document.getElementById('year-select');
+            yearSelect.innerHTML = '<option value="" selected disabled>Selecione um ano</option>';
+            for (let year = currentYear - 1; year >= 1970; year--) { // Inclui até o ano anterior ao ano corrente em ordem decrescente
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function handleOptionChange() {
+            const dataSelect = document.getElementById('data-select');
+            const yearSelectContainer = document.getElementById('year-select-container');
+            const yearSelect = document.getElementById('year-select');
+
+            if (dataSelect.value) {
+                yearSelectContainer.style.display = 'block';
+            } else {
+                yearSelectContainer.style.display = 'none';
+                yearSelect.value = '';
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('http://127.0.0.1:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'username': username,
+                    'password': password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                token = data.access_token;
+                // Armazena o token no localStorage
+                localStorage.setItem('token', token);
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('data-buttons').style.display = 'block';
+                document.getElementById('logout-button').style.display = 'inline-block';
+            } else {
+                alert('Login failed');
+            }
+        }
+
+        function logout() {
+            // Remove o token do localStorage
+            localStorage.removeItem('token');
+            token = '';
+            clearData();
+            location.reload(); // Recarrega a página
+        }
+
+        async function fetchData() {
+            const select = document.getElementById('data-select');
+            const yearSelect = document.getElementById('year-select');
+            const value = select.value;
+            const year = yearSelect.value;
+            if (!value) {
+                alert('Por favor, selecione uma opção.');
+                return;
+            }
+            const [endpoint, subopcao] = value.split('|');
+
+            let url = `http://127.0.0.1:8000/${endpoint}?ano=${year}`;
+            if (subopcao) {
+                url += `&subopcao=${subopcao}`;
+            }
+
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('file-info').style.display = 'none';
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                displayResult(data);
+
+                // Supõe que o nome do arquivo seja retornado na resposta
+                if (data && data.filename) {
+                    displayFileInfo(data.filename);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+                displayResult({ Error: 'Erro ao buscar dados' });
+            } finally {
+                document.getElementById('loading-spinner').style.display = 'none';
+            }
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            resultContent.textContent = JSON.stringify(data, null, 2);
+            resultDiv.style.display = 'block';
+        }
+
+        function displayFileInfo(filename) {
+            const fileInfoDiv = document.getElementById('file-info');
+            const fileNameP = document.getElementById('file-name');
+            const fileLink = document.getElementById('file-link');
+
+            fileNameP.textContent = `Nome do arquivo: ${filename}`;
+            fileLink.href = `/download/${filename}`;
+            fileInfoDiv.style.display = 'block';
+        }
+
+        function clearData() {
+            document.getElementById('data-select').value = '';
+            document.getElementById('year-select-container').style.display = 'none';
+            document.getElementById('year-select').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('file-info').style.display = 'none';
+        }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
