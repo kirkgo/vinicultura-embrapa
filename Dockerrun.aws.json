@@ -1,0 +1,17 @@
+{
+    "AWSEBDockerrunVersion": 2,
+    "containerDefinitions": [
+      {
+        "name": "fastapi-app",
+        "image": "public.ecr.aws/lambda/python:3.9-slim",
+        "essential": true,
+        "memory": 512,
+        "portMappings": [
+          {
+            "containerPort": 8000
+          }
+        ]
+      }
+    ]
+  }
+  
