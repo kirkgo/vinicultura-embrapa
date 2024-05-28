@@ -1,9 +1,9 @@
 {
-    "AWSEBDockerrunVersion": 2,
+    "AWSEBDockerrunVersion": "3",
     "containerDefinitions": [
       {
-        "name": "fastapi-app",
-        "image": "public.ecr.aws/lambda/python:3.9-slim",
+        "name": "fiapmlet1-app",
+        "image": "kirkgo/fiapmlet1-app:latest",
         "essential": true,
         "memory": 512,
         "portMappings": [
