@@ -4,6 +4,12 @@
 
 Esta é uma API desenvolvida em FastAPI para obter e exibir dados de vitivinicultura, como produção, processamento, comercialização, importação e exportação de uvas e vinhos. Os dados são extraídos do site da Embrapa Uva e Vinho e podem ser acessados por meio de uma interface web [simples](jlkj).
 
+## Autor
+
+- Kirk Patrick (MLET1 - Grupo 66)
+- Você pode entrar em contato com o autor pelo LinkedIn: [https://www.linkedin.com/in/kirkgo/](https://www.linkedin.com/in/kirkgo/)
+
+
 ## Requisitos
 
  - Docker 
