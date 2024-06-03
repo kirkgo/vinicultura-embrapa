@@ -43,7 +43,7 @@ A API utiliza as seguintes bibliotecas Python, especificadas no arquivo `require
 
 ### Postman Collection
 
-Dentro da pasta `postman` você vai encontrar a collection e o environment usar a API através do postman. 
+Dentro da pasta `postman` você vai encontrar a collection e o environment para utilizar a API através do postman. 
 
 ## Arquitetura
 
@@ -98,6 +98,13 @@ Este comando irá:
 Depois que os contêineres estiverem em execução, você pode acessar a API via postman ou usar interface web através do navegador em:
 
     http://localhost:8000
+
+#### Credenciais de Acesso
+
+Abaixo estão as credenciais para acessar a aplicação: 
+
+- Usuário: admin
+- Password: mlet1
 
 ## Como fazer Deploy da Aplicação na AWS
 
