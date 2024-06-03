@@ -2,7 +2,7 @@
 
 ## Introdução
 
-Esta é uma API desenvolvida em FastAPI para obter e exibir dados de vitivinicultura, como produção, processamento, comercialização, importação e exportação de uvas e vinhos. Os dados são extraídos do site da Embrapa Uva e Vinho e podem ser acessados por meio de uma interface web [simples](jlkj).
+Esta é uma API desenvolvida em FastAPI para obter e exibir dados de vitivinicultura, como produção, processamento, comercialização, importação e exportação de uvas e vinhos. Os dados são extraídos do site da Embrapa Uva e Vinho e podem ser acessados por meio de uma interface web ou pelo postman.
 
 ## Autor
 
